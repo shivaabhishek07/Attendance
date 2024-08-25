@@ -1,9 +1,7 @@
 package com.example.attendence_1
 
-import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -14,14 +12,20 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.camera.view.PreviewView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
+import com.google.zxing.common.BitMatrix
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.Executors
+import android.Manifest
+
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -44,11 +48,13 @@ class RegisterActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var capturedFaceEmbedding: FloatArray? = null
     private var capturedFaceBitmap: Bitmap? = null
+    private var photoFilePath: String? = null  // Store photo file path
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
+        // Initialize UI elements
         etUserId = findViewById(R.id.etUserId)
         etName = findViewById(R.id.etName)
         etEmail = findViewById(R.id.etEmail)
@@ -60,9 +66,11 @@ class RegisterActivity : AppCompatActivity() {
         previewView = findViewById(R.id.previewView)
         imageView = findViewById(R.id.imageView)
 
+        // Initialize database and model
         userRepository = UserRepository(this)
         faceNetModel = FaceNetModel(this, Models.FACENET, useGpu = true, useXNNPack = true)
 
+        // Set up button listeners
         btnSubmit.setOnClickListener { submitUser() }
         btnBack.setOnClickListener { finish() }
         btnCaptureFace.setOnClickListener { startCameraPreview() }
@@ -72,9 +80,8 @@ class RegisterActivity : AppCompatActivity() {
             btnOkay.visibility = View.GONE
         }
 
-        if (allPermissionsGranted()) {
-            // Permissions are already granted, do nothing until Capture button is clicked
-        } else {
+        // Check permissions
+        if (!allPermissionsGranted()) {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
     }
@@ -93,16 +100,13 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
-
             imageCapture = ImageCapture.Builder().build()
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-
             try {
                 cameraProvider?.unbindAll()
                 cameraProvider?.bindToLifecycle(this, cameraSelector, preview, imageCapture)
@@ -113,120 +117,144 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun captureImage() {
+        val userId = etUserId.text.toString()
         val imageCapture = imageCapture ?: return
-
-        val outputDirectory = getOutputDirectory()
-        val photoFile = File(outputDirectory, "${System.currentTimeMillis()}.jpg")
+        val photoFile = File(getPhotosDirectory(), "${userId}_photo.jpg") // Save in Photos folder
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-        imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
-            override fun onError(exc: ImageCaptureException) {
-                Log.e("CameraX", "Photo capture failed: ${exc.message}", exc)
-            }
+        imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exc: ImageCaptureException) {
+                    Log.e("CameraX", "Photo capture failed: ${exc.message}", exc)
+                }
 
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                val savedUri = Uri.fromFile(photoFile)
-                val bitmap = BitmapUtils.getBitmapFromUri(contentResolver, savedUri)
-                bitmap?.let {
-                    capturedFaceBitmap = it
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    photoFilePath = photoFile.absolutePath
                     previewView.visibility = View.GONE
-                    imageView.setImageBitmap(it)
+
+                    // Decode bitmap from file
+                    capturedFaceBitmap = BitmapUtils.decodeBitmapFromFile(photoFilePath!!)
+
+                    // Rotate the bitmap by 90 degrees
+                    val matrix = android.graphics.Matrix().apply {
+                        postRotate(-90f)
+                    }
+                    val rotatedBitmap = Bitmap.createBitmap(
+                        capturedFaceBitmap!!, 0, 0,
+                        capturedFaceBitmap!!.width, capturedFaceBitmap!!.height,
+                        matrix, true
+                    )
+
+                    val orientation = resources.configuration.orientation
+
+                    if (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+                        // Landscape mode: Set the image to capturedFaceBitmap
+                        imageView.setImageBitmap(capturedFaceBitmap)
+                    } else if (orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
+                        // Portrait mode: Set the image to rotatedBitmap
+                        imageView.setImageBitmap(rotatedBitmap)
+                    }
                     imageView.visibility = View.VISIBLE
                     btnRetake.visibility = View.VISIBLE
                     btnOkay.visibility = View.VISIBLE
                 }
-                stopCamera()
-            }
-        })
+            })
     }
 
-    private fun getOutputDirectory(): File {
-        val mediaDir = externalMediaDirs.firstOrNull()?.let {
-            File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
-        }
-        return if (mediaDir != null && mediaDir.exists()) mediaDir else filesDir
-    }
+
 
     private fun processCapturedFace(bitmap: Bitmap?) {
         bitmap?.let {
             val inputImage = InputImage.fromBitmap(it, 0)
-            val detectorOptions = FaceDetectorOptions.Builder()
+            val options = FaceDetectorOptions.Builder()
                 .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
                 .build()
-            val detector = FaceDetection.getClient(detectorOptions)
+            val detector = FaceDetection.getClient(options)
 
             detector.process(inputImage)
                 .addOnSuccessListener { faces ->
                     if (faces.isNotEmpty()) {
                         val face = faces[0]
-                        val faceBitmap = BitmapUtils.cropRectFromBitmap(it, face.boundingBox)
-                        capturedFaceBitmap = faceBitmap
-                        capturedFaceEmbedding = faceNetModel.getFaceEmbedding(faceBitmap)
-                        Toast.makeText(this, "Face captured and processed successfully", Toast.LENGTH_SHORT).show()
+                        val croppedBitmap = BitmapUtils.cropFace(it, face.boundingBox)
+                        capturedFaceEmbedding = faceNetModel.getFaceEmbedding(croppedBitmap)
+                        Toast.makeText(this, "Processed and saved the image, you can proceed and submit", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, "No face detected", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(this, "Face detection failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Failed to process face", Toast.LENGTH_SHORT).show()
+                    Log.e("FaceDetection", "Face detection failed: ${e.message}", e)
                 }
         }
     }
 
     private fun submitUser() {
-        val userIdString = etUserId.text.toString()
-        val userName = etName.text.toString()
-        val userEmail = etEmail.text.toString()
+        val userId = etUserId.text.toString()
+        val name = etName.text.toString()
+        val email = etEmail.text.toString()
 
-        if (userIdString.isBlank() || userName.isBlank() || userEmail.isBlank()) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+        if (name.isEmpty() || email.isEmpty() || capturedFaceEmbedding == null) {
+            Toast.makeText(this, "Please complete all fields and capture a face image", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val userId = userIdString.toIntOrNull()
-        if (userId == null) {
-            Toast.makeText(this, "Please enter a valid number for User ID", Toast.LENGTH_SHORT).show()
-            return
-        }
+        // Generate QR code and save it in QRs folder
+        val qrCodeBitmap = generateQRCode(userId)
+        val qrCodePath = saveBitmap(qrCodeBitmap, "${userId}_qr.jpg", getQRsDirectory())
 
-        if (userRepository.getUserById(userId) != null) {
-            Toast.makeText(this, "User ID already exists. Please use a different ID.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (capturedFaceEmbedding == null) {
-            Toast.makeText(this, "Please capture face first", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val user = User(userId = userId, name = userName, email = userEmail, embedding = capturedFaceEmbedding!!)
+        // Save user to database
+        val user = User(userId, name, email, capturedFaceEmbedding!!, qrCodePath, photoFilePath!!)
         userRepository.insertUser(user)
-        Toast.makeText(this, "User Registered Successfully", Toast.LENGTH_SHORT).show()
+
+        Toast.makeText(this, "User registered successfully", Toast.LENGTH_SHORT).show()
         finish()
     }
 
-    private fun stopCamera() {
-        cameraProvider?.unbindAll()
+    private fun generateQRCode(data: String): Bitmap {
+        val bitMatrix: BitMatrix = MultiFormatWriter().encode(data, BarcodeFormat.QR_CODE, 200, 200)
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        return bitmap
+    }
+
+    private fun saveBitmap(bitmap: Bitmap, filename: String, directory: File): String {
+        val file = File(directory, filename)
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        }
+        return file.absolutePath
+    }
+
+
+    private fun getOutputDirectory(baseFolderName: String): File {
+        val mediaDir = externalMediaDirs.firstOrNull()?.let {
+            File(it, resources.getString(R.string.app_name) + "/$baseFolderName").apply { mkdirs() }
+        }
+        return if (mediaDir != null && mediaDir.exists()) mediaDir else filesDir
+    }
+
+    private fun getPhotosDirectory(): File {
+        return getOutputDirectory("Photos")
+    }
+
+    private fun getQRsDirectory(): File {
+        return getOutputDirectory("QRs")
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                // Permissions granted, do nothing until Capture button is clicked
-            } else {
-                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
-    }
-
     companion object {
-        private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+        private const val REQUEST_CODE_PERMISSIONS = 10
     }
 }

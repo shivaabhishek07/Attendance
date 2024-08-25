@@ -33,6 +33,8 @@
         <activity
             android:name=".CameraActivity"
             android:exported="true" />
+        <activity android:name=".QRScanActivity" />
+        <activity android:name=".UserListActivity" />
     </application>
 
 </manifest>

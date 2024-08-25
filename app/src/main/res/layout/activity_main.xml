@@ -20,7 +20,6 @@
         android:layout_below="@id/tvTitle"
         android:layout_margin="16dp"
         android:hint="Enter User ID"
-        android:inputType="number"
         android:minHeight="48dp" />
 
     <Button
@@ -30,14 +29,24 @@
         android:text="Fetch"
         android:layout_below="@id/etUserId"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"/> <!-- Make this button hidden since it's no longer used -->
+
+    <Button
+        android:id="@+id/btnScanQR"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan QR"
+        android:layout_below="@id/etUserId"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"/>
 
     <TextView
         android:id="@+id/tvUserDetails"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="User Details:"
-        android:layout_below="@id/btnFetch"
+        android:text="Attendance Status:"
+        android:layout_below="@id/btnMarkAttendance"
         android:layout_margin="16dp"/>
 
     <Button
@@ -45,7 +54,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Mark Attendance"
-        android:layout_below="@id/tvUserDetails"
+        android:layout_below="@id/btnScanQR"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"/>
 
@@ -54,13 +63,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Register"
-        android:layout_below="@id/btnMarkAttendance"
+        android:layout_below="@id/tvUserDetails"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"/>
+    <Button
+        android:id="@+id/btnViewUsers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="View Users"
+        android:layout_below="@id/btnRegister"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"/>
+
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"/>
-
 </RelativeLayout>

@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.example.attendence_1
 
 import android.Manifest
@@ -30,14 +29,16 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
 
     private lateinit var etUserId: EditText
-    private lateinit var btnFetch: Button
-    private lateinit var tvUserDetails: TextView
     private lateinit var btnMarkAttendance: Button
     private lateinit var btnRegister: Button
+    private lateinit var btnScanQR: Button
     private lateinit var previewView: PreviewView
+    private lateinit var tvUserDetails: TextView
+    private lateinit var btnViewUsers: Button
 
     private lateinit var userRepository: UserRepository
     private lateinit var faceNetModel: FaceNetModel
+    private lateinit var attendanceRepository: AttendanceRepository
 
     private val cameraExecutor = Executors.newSingleThreadExecutor()
     private var imageCapture: ImageCapture? = null
@@ -48,18 +49,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         etUserId = findViewById(R.id.etUserId)
-        btnFetch = findViewById(R.id.btnFetch)
-        tvUserDetails = findViewById(R.id.tvUserDetails)
         btnMarkAttendance = findViewById(R.id.btnMarkAttendance)
         btnRegister = findViewById(R.id.btnRegister)
+        btnScanQR = findViewById(R.id.btnScanQR)
         previewView = findViewById(R.id.previewView)
+        tvUserDetails = findViewById(R.id.tvUserDetails)
+        btnViewUsers = findViewById(R.id.btnViewUsers)
 
         userRepository = UserRepository(this)
         faceNetModel = FaceNetModel(this, Models.FACENET, useGpu = true, useXNNPack = true)
-
-        btnFetch.setOnClickListener {
-            fetchUserDetails()
-        }
+        attendanceRepository = AttendanceRepository(this)
 
         btnMarkAttendance.setOnClickListener {
             startCameraPreview()
@@ -67,6 +66,16 @@ class MainActivity : AppCompatActivity() {
 
         btnRegister.setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnScanQR.setOnClickListener {
+            val intent = Intent(this, QRScanActivity::class.java)
+            startActivityForResult(intent, REQUEST_CODE_QR_SCAN)
+        }
+
+        btnViewUsers.setOnClickListener {
+            val intent = Intent(this, UserListActivity::class.java)
             startActivity(intent)
         }
 
@@ -80,30 +89,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchUserDetails() {
-        val userIdText = etUserId.text.toString()
-
-        if (userIdText.isEmpty()) {
-            Toast.makeText(this, "Please enter the User ID", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val userId: Int
-        try {
-            userId = userIdText.toInt()
-        } catch (e: NumberFormatException) {
-            Toast.makeText(this, "Please enter a valid number format for User ID", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val user = userRepository.getUserById(userId)
-        if (user != null) {
-            tvUserDetails.text = "Name: ${user.name}\nEmail: ${user.email}"
-        } else {
-            tvUserDetails.text = "User not found"
-        }
-    }
-
     private fun startCameraPreview() {
         val userIdText = etUserId.text.toString()
 
@@ -112,22 +97,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val userId: Int
-        try {
-            userId = userIdText.toInt()
-        } catch (e: NumberFormatException) {
-            Toast.makeText(this, "Please enter a valid number format for User ID", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val user = userRepository.getUserById(userId)
+        val user = userRepository.getUserById(userIdText)
         if (user != null) {
             // Hide all other UI elements
             etUserId.visibility = View.GONE
-            btnFetch.visibility = View.GONE
-            tvUserDetails.visibility = View.GONE
             btnMarkAttendance.visibility = View.GONE
             btnRegister.visibility = View.GONE
+            btnScanQR.visibility = View.GONE
+            tvUserDetails.visibility = View.GONE
+            btnViewUsers.visibility = View.GONE
 
             // Start CameraX preview for 5 seconds
             previewView.visibility = View.VISIBLE
@@ -188,17 +166,8 @@ class MainActivity : AppCompatActivity() {
                     val savedUri = Uri.fromFile(photoFile)
                     val bitmap = BitmapUtils.getBitmapFromUri(contentResolver, savedUri)
                     bitmap?.let {
-                        processCapturedFace(it, storedEmbedding)
+                        processCapturedFace(it, storedEmbedding, photoFile)
                     }
-                    // Stop the camera and hide the preview
-                    stopCamera()
-                    previewView.visibility = View.GONE
-                    // Show all other UI elements
-                    etUserId.visibility = View.VISIBLE
-                    btnFetch.visibility = View.VISIBLE
-                    tvUserDetails.visibility = View.VISIBLE
-                    btnMarkAttendance.visibility = View.VISIBLE
-                    btnRegister.visibility = View.VISIBLE
                 }
             }
         )
@@ -211,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         return if (mediaDir != null && mediaDir.exists()) mediaDir else filesDir
     }
 
-    private fun processCapturedFace(bitmap: Bitmap, storedEmbedding: FloatArray) {
+    private fun processCapturedFace(bitmap: Bitmap, storedEmbedding: FloatArray, photoFile: File) {
         val inputImage = InputImage.fromBitmap(bitmap, 0)
         val detectorOptions = FaceDetectorOptions.Builder()
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
@@ -231,10 +200,32 @@ class MainActivity : AppCompatActivity() {
                     Log.d("FaceDetection", "No face detected")
                     Toast.makeText(this, "No face detected, try again", Toast.LENGTH_SHORT).show()
                 }
+                // Delete the image file after processing
+                if (photoFile.exists()) {
+                    photoFile.delete()
+                    Log.d("ImageFile", "Image file deleted: ${photoFile.name}")
+                }
             }
             .addOnFailureListener { e ->
                 Log.e("FaceDetection", "Face detection failed: ${e.message}")
                 Toast.makeText(this, "Face detection failed!", Toast.LENGTH_SHORT).show()
+                // Ensure the image file is deleted even if processing fails
+                if (photoFile.exists()) {
+                    photoFile.delete()
+                    Log.d("ImageFile", "Image file deleted: ${photoFile.name}")
+                }
+            }
+            .addOnCompleteListener {
+                // Stop the camera and hide the preview
+                stopCamera()
+                previewView.visibility = View.GONE
+                // Show all other UI elements
+                etUserId.visibility = View.VISIBLE
+                btnMarkAttendance.visibility = View.VISIBLE
+                btnRegister.visibility = View.VISIBLE
+                btnScanQR.visibility = View.VISIBLE
+                tvUserDetails.visibility = View.VISIBLE
+                btnViewUsers.visibility = View.VISIBLE
             }
     }
 
@@ -244,10 +235,14 @@ class MainActivity : AppCompatActivity() {
         val cosineSim = cosineSimilarity(faceEmbedding, storedEmbedding)
         Log.d("EmbeddingComparison", "Cosine Similarity: $cosineSim")
         val currentTime = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-        val status = if (distance < THRESHOLD || cosineSim > COSINE_THRESHOLD) {
-            "Attendance marked for UserID: ${etUserId.text.toString()} at $currentTime"
+        val currentDate = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+        var status = ""
+        if (distance < THRESHOLD || cosineSim > COSINE_THRESHOLD) {
+            attendanceRepository.insertAttendance(etUserId.text.toString(), currentDate, "Present")
+            status = "Attendance marked for UserID: ${etUserId.text} at ${currentTime}"
+
         } else {
-            "Face does not match with UserID: ${etUserId.text.toString()}"
+            status = "Face does not match with UserID: ${etUserId.text}"
         }
         tvUserDetails.append("\n$status")
     }
@@ -285,10 +280,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_QR_SCAN && resultCode == RESULT_OK) {
+            val qrCodeResult = data?.getStringExtra(QRScanActivity.EXTRA_QR_CODE)
+            qrCodeResult?.let {
+                etUserId.setText(it)
+                startCameraPreview()
+            }
+        }
+    }
+
+
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
-        private const val THRESHOLD = 1.0f
-        private const val COSINE_THRESHOLD = 0.58f
+        private const val THRESHOLD = 4.0f
+        private const val COSINE_THRESHOLD = 0.7f
+        private const val REQUEST_CODE_QR_SCAN = 101
     }
 }
