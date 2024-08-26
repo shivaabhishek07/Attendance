@@ -2,6 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/light"
     android:padding="16dp">
 
     <LinearLayout
@@ -49,6 +50,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Capture Face"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:background="@color/lightblue"
+
             android:layout_marginTop="16dp" />
 
         <Button
@@ -56,6 +61,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Retake Image"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:background="@color/lightblue"
             android:visibility="gone"
             android:layout_marginTop="16dp" />
 
@@ -64,6 +72,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Save Image"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:background="@color/lightblue"
             android:visibility="gone"
             android:layout_marginTop="16dp" />
 
@@ -72,6 +83,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Submit"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:background="@color/lightblue"
             android:layout_marginTop="16dp" />
 
         <Button
@@ -79,6 +93,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Back to Main"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:background="@color/lightblue"
             android:layout_marginTop="16dp" />
     </LinearLayout>
 </ScrollView>

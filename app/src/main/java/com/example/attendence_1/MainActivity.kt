@@ -1,15 +1,18 @@
 package com.example.attendence_1
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +29,19 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 import java.io.File
 
+
+import android.app.Activity
+import android.content.Context
+
+import android.view.LayoutInflater
+
+
+
+
+import androidx.core.view.ViewCompat
+
+
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var etUserId: EditText
@@ -33,14 +49,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnRegister: Button
     private lateinit var btnScanQR: Button
     private lateinit var previewView: PreviewView
-    private lateinit var tvUserDetails: TextView
+
     private lateinit var btnViewUsers: Button
 
     private lateinit var userRepository: UserRepository
     private lateinit var faceNetModel: FaceNetModel
     private lateinit var attendanceRepository: AttendanceRepository
-
-    private val cameraExecutor = Executors.newSingleThreadExecutor()
     private var imageCapture: ImageCapture? = null
     private var cameraProvider: ProcessCameraProvider? = null
 
@@ -50,10 +64,11 @@ class MainActivity : AppCompatActivity() {
 
         etUserId = findViewById(R.id.etUserId)
         btnMarkAttendance = findViewById(R.id.btnMarkAttendance)
+
         btnRegister = findViewById(R.id.btnRegister)
         btnScanQR = findViewById(R.id.btnScanQR)
         previewView = findViewById(R.id.previewView)
-        tvUserDetails = findViewById(R.id.tvUserDetails)
+
         btnViewUsers = findViewById(R.id.btnViewUsers)
 
         userRepository = UserRepository(this)
@@ -104,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             btnMarkAttendance.visibility = View.GONE
             btnRegister.visibility = View.GONE
             btnScanQR.visibility = View.GONE
-            tvUserDetails.visibility = View.GONE
+
             btnViewUsers.visibility = View.GONE
 
             // Start CameraX preview for 5 seconds
@@ -114,8 +129,8 @@ class MainActivity : AppCompatActivity() {
                 captureImage(user.embedding)
             }, 5000) // Delay for 5 seconds
         } else {
-            tvUserDetails.text = "User not found"
-            Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()
+            showCustomTopView("User not found")
+
         }
     }
 
@@ -224,7 +239,7 @@ class MainActivity : AppCompatActivity() {
                 btnMarkAttendance.visibility = View.VISIBLE
                 btnRegister.visibility = View.VISIBLE
                 btnScanQR.visibility = View.VISIBLE
-                tvUserDetails.visibility = View.VISIBLE
+
                 btnViewUsers.visibility = View.VISIBLE
             }
     }
@@ -237,14 +252,19 @@ class MainActivity : AppCompatActivity() {
         val currentTime = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
         val currentDate = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date())
         var status = ""
-        if (distance < THRESHOLD || cosineSim > COSINE_THRESHOLD) {
-            attendanceRepository.insertAttendance(etUserId.text.toString(), currentDate, "Present")
-            status = "Attendance marked for UserID: ${etUserId.text} at ${currentTime}"
 
+        if (attendanceRepository.hasAttendanceMarked(etUserId.text.toString(), currentDate)) {
+            status = "Attendance has already been marked for UserID: ${etUserId.text}"
         } else {
-            status = "Face does not match with UserID: ${etUserId.text}"
+            if (distance < THRESHOLD || cosineSim > COSINE_THRESHOLD) {
+                attendanceRepository.insertAttendance(etUserId.text.toString(), currentDate, "Present")
+                status = "Attendance marked for UserID: ${etUserId.text} at ${currentTime}"
+            } else {
+                status = "Face does not match with UserID: ${etUserId.text}"
+            }
         }
-        tvUserDetails.append("\n$status")
+
+        showCustomTopView(status)
     }
 
     private fun stopCamera() {
@@ -299,4 +319,27 @@ class MainActivity : AppCompatActivity() {
         private const val COSINE_THRESHOLD = 0.7f
         private const val REQUEST_CODE_QR_SCAN = 101
     }
+    private fun showCustomTopView(message: String) {
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val customView = inflater.inflate(R.layout.custom_snackbar, null)
+        val textView = customView.findViewById<TextView>(R.id.custom_snackbar_text)
+        textView.text = message
+
+        val rootLayout = findViewById<FrameLayout>(android.R.id.content)
+        val params = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.TOP
+            topMargin = 100 // Adjust the margin as needed
+        }
+
+        rootLayout.addView(customView, params)
+
+        // Remove the view after some time
+        customView.postDelayed({
+            rootLayout.removeView(customView)
+        }, 5000) // Duration to show the custom view
+    }
+
 }

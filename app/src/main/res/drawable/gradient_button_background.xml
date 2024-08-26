@@ -1,0 +1,9 @@
+<!-- res/drawable/gradient_button_background.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="@color/light"
+        android:endColor="@color/light"
+        android:angle="90"
+        android:type="linear" />
+</shape>
+

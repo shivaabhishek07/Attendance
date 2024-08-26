@@ -2,6 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/light"
     android:padding="16dp">
 
     <LinearLayout
@@ -32,19 +33,31 @@
             android:text="Email"
             android:paddingBottom="8dp"/>
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp">
+
         <ImageView
             android:id="@+id/ivDialogUserPhoto"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:paddingBottom="8dp" />
-
+            android:paddingBottom="8dp"
+            android:scaleType="centerCrop"/>
         <ImageView
             android:id="@+id/ivDialogUserQrPhoto"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:paddingBottom="16dp"/>
+            android:paddingBottom="16dp"
+            android:layout_marginStart="30dp"
+            android:scaleType="centerCrop"/>
+    </LinearLayout>
 
-        <!-- Calendar Layout -->
+
+    <!-- Calendar Layout -->
         <LinearLayout
             android:id="@+id/calendarContainer"
             android:layout_width="match_parent"
@@ -65,8 +78,9 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Back"
-                    android:textColor="@color/blue"
-                    android:background="@null"
+                    android:textColor="@color/black"
+                    android:background="@color/lightblue"
+
                     android:textStyle="bold"
                     android:textSize="20sp"/>
 
@@ -76,6 +90,8 @@
                     android:layout_weight="2"
                     android:layout_height="wrap_content"
                     android:text="Aug 2024"
+                    android:textStyle="bold"
+                    android:background="@color/lightblue"
                     android:textSize="20sp"
                     android:textAlignment="center"
                     android:textColor="@color/black"/>
@@ -86,8 +102,9 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Forward"
-                    android:textColor="@color/blue"
-                    android:background="@null"
+                    android:textColor="@color/black"
+                    android:background="@color/lightblue"
+
                     android:textStyle="bold"
                     android:textSize="20sp"/>
             </LinearLayout>
@@ -171,11 +188,12 @@
             android:id="@+id/btnDeleteUser"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delete User"
-            android:textColor="@android:color/white"
-            android:background="@color/red"
+            android:layout_gravity="center"
             android:layout_marginTop="16dp"
-            android:layout_gravity="center"/>
+            android:background="@color/red"
+
+            android:text="Delete User"
+            android:textColor="#000000" />
 
 
     </LinearLayout>

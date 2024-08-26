@@ -2,6 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/light"
     tools:context=".UserListActivity">
 
     <TextView
@@ -13,6 +14,35 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp" />
 
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/tvTitle"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnViewUsers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View Users"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:background="@color/lightblue"
+            android:layout_marginEnd="16dp"/>
+
+        <Button
+            android:id="@+id/btnViewAttendance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View Attendance"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:background="@color/lightblue"/>
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvNoUsersFound"
         android:layout_width="match_parent"
@@ -21,33 +51,14 @@
         android:text="No Users Found"
         android:textAlignment="center"
         android:visibility="gone"
-        android:layout_below="@id/tvTitle" />
-
-    <Button
-        android:id="@+id/btnViewUsers"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="View Users"
-        android:layout_below="@id/tvTitle"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"/>
-
-    <Button
-        android:id="@+id/btnViewAttendance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="View Attendance"
-        android:layout_below="@id/tvTitle"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"/>
+        android:layout_below="@id/buttonLayout" />
 
     <ListView
         android:id="@+id/userListView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/btnViewUsers"
+        android:layout_below="@id/buttonLayout"
+        android:layout_marginTop="16dp"
         android:padding="16dp"
         android:visibility="gone" />
 
@@ -55,7 +66,7 @@
         android:id="@+id/attendanceLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/btnViewAttendance"
+        android:layout_below="@id/userListView"
         android:padding="16dp"
         android:orientation="vertical"
         android:visibility="gone">
@@ -74,10 +85,20 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp" />
 
+        <TextView
+            android:id="@+id/tvNoAttFound"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:text="No Attendance Found on selected date"
+            android:textAlignment="center"
+            android:visibility="gone" />
+
         <ListView
             android:id="@+id/attendanceListView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="16dp"
+            android:visibility="gone"/>
     </LinearLayout>
 </RelativeLayout>

@@ -88,6 +88,23 @@ class AttendanceRepository(context: Context) {
         return attendanceRecords
     }
 
+    // Check if attendance has already been marked for a specific user on a specific date
+    fun hasAttendanceMarked(userId: String, date: String): Boolean {
+        val cursor: Cursor = database.query(
+            UserDatabaseHelper.ATTENDANCE_TABLE_NAME,
+            arrayOf(UserDatabaseHelper.COLUMN_ATTENDANCE_ID),
+            "${UserDatabaseHelper.COLUMN_USER_ID_FK} = ? AND ${UserDatabaseHelper.COLUMN_DATE} = ?",
+            arrayOf(userId, date),
+            null,
+            null,
+            null
+        )
+        val hasRecord = cursor.moveToFirst()
+        cursor.close()
+        return hasRecord
+    }
+
+
 
     data class AttendanceRecord(
         val attendanceId: Int,

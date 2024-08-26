@@ -12,6 +12,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/capture"
+        android:background="@color/lightblue"
+        android:textColor="@color/black"
+        android:textStyle="bold"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="16dp"/>
@@ -21,6 +24,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Switch Camera"
+        android:background="@color/lightblue"
+        android:textColor="@color/black"
+        android:textStyle="bold"
         android:layout_above="@id/btnCapture"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="16dp"/>

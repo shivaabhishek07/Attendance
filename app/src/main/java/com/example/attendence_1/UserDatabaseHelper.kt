@@ -27,7 +27,7 @@ class UserDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
 
     override fun onCreate(db: SQLiteDatabase) {
         val createUsersTable = ("CREATE TABLE " + TABLE_NAME + " ("
-                + COLUMN_USER_ID + " TEXT PRIMARY KEY,"
+                + COLUMN_USER_ID + " TEXT,"
                 + COLUMN_NAME + " TEXT,"
                 + COLUMN_EMAIL + " TEXT,"
                 + COLUMN_EMBEDDING + " BLOB,"
@@ -38,7 +38,7 @@ class UserDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         // Create attendance table
         val createAttendanceTable = ("CREATE TABLE " + ATTENDANCE_TABLE_NAME + " ("
                 + COLUMN_ATTENDANCE_ID + " INTEGER PRIMARY KEY,"
-                + COLUMN_USER_ID_FK + " TEXT PRIMARY KEY,"
+                + COLUMN_USER_ID_FK + " TEXT ,"
                 + COLUMN_DATE + " TEXT,"
                 + COLUMN_STATUS + " TEXT CHECK(" + COLUMN_STATUS + " IN ('Present', 'Absent', 'Not-taken')),"
                 + "FOREIGN KEY(" + COLUMN_USER_ID_FK + ") REFERENCES " + TABLE_NAME + "(" + COLUMN_USER_ID + "))")

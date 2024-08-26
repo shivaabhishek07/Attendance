@@ -1,83 +1,119 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Attendance System"
-        android:textSize="24sp"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"/>
-
-    <EditText
-        android:id="@+id/etUserId"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tvTitle"
-        android:layout_margin="16dp"
-        android:hint="Enter User ID"
-        android:minHeight="48dp" />
-
-    <Button
-        android:id="@+id/btnFetch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Fetch"
-        android:layout_below="@id/etUserId"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"
-        android:visibility="gone"/> <!-- Make this button hidden since it's no longer used -->
-
-    <Button
-        android:id="@+id/btnScanQR"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scan QR"
-        android:layout_below="@id/etUserId"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"/>
-
-    <TextView
-        android:id="@+id/tvUserDetails"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Attendance Status:"
-        android:layout_below="@id/btnMarkAttendance"
-        android:layout_margin="16dp"/>
-
-    <Button
-        android:id="@+id/btnMarkAttendance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Mark Attendance"
-        android:layout_below="@id/btnScanQR"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"/>
-
-    <Button
-        android:id="@+id/btnRegister"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Register"
-        android:layout_below="@id/tvUserDetails"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"/>
-    <Button
-        android:id="@+id/btnViewUsers"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="View Users"
-        android:layout_below="@id/btnRegister"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"/>
-
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
+    android:background="@color/light">
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"/>
-</RelativeLayout>
+        tools:context=".MainActivity">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Attendance System"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textSize="30sp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:id="@+id/tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvTitle"
+            android:layout_marginTop="66dp"
+            android:layout_marginLeft="16dp"
+            android:text="ENTER ID"
+            android:textColor="@color/black"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etUserId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv"
+            android:layout_margin="16dp"
+            android:layout_marginTop="43dp"
+            android:layout_marginBottom="16dp"
+            android:hint="Enter User ID"
+            android:textColor="@color/black"
+            android:minHeight="48dp" />
+
+        <LinearLayout
+            android:id="@+id/llatt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_below="@id/etUserId"
+            android:layout_marginTop="30dp">
+
+            <Button
+                android:id="@+id/btnMarkAttendance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/lightblue"
+                android:text="Mark Attendance"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="OR"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:gravity="center"/>
+
+            <Button
+                android:id="@+id/btnScanQR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:gravity="center"
+                android:background="@color/lightblue"
+                android:text="Scan QR"
+                android:textColor="@android:color/black"
+                android:drawableLeft="@drawable/qr_code"
+                android:drawablePadding="8dp"/>
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnRegister"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:background="@color/lightblue"
+            android:text="Register"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/llatt"
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnViewUsers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btnRegister"
+            android:layout_marginTop="30dp"
+            android:background="@color/lightblue"
+            android:text="View Users"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+    </RelativeLayout>
+</ScrollView>

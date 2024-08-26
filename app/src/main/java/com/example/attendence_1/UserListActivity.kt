@@ -1,6 +1,7 @@
 package com.example.attendence_1
 
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
@@ -14,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import androidx.appcompat.widget.Toolbar
+import java.util.Arrays
 
 @Suppress("DEPRECATION")
 class UserListActivity : AppCompatActivity() {
@@ -45,7 +47,8 @@ class UserListActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnFetchAttendance).setOnClickListener {
-            val dateInput = findViewById<EditText>(R.id.etDateInput).text.toString()
+            val dateInput = findViewById<EditText>(R.id.etDateInput).text.toString().trim()
+            Log.d("DateInput", "Date: $dateInput")
             if (dateInput.isNotEmpty()) {
                 loadAttendance(dateInput)
             } else {
@@ -107,32 +110,54 @@ class UserListActivity : AppCompatActivity() {
     }
 
     private fun loadAttendance(date: String) {
+        Log.d("LoadAttendance", "It is loading")
         val attendanceRepository = AttendanceRepository(this)
         val users = userRepository.getAllUsers()
         val attendanceRecords = attendanceRepository.getAttendanceByDate(date)
+        val attListView: ListView = findViewById(R.id.attendanceListView)
+        val noAttFoTextView: TextView = findViewById(R.id.tvNoAttFound)
 
-        val attendanceList = attendanceRecords.map { record ->
-            val userName = userRepository.getUserById(record.userId)?.name ?: "Unknown"
+        Log.d("LoadAttendance", "Att $attendanceRecords , $users")
+//        attListView.visibility = ListView.VISIBLE
+        val attendanceMap = mutableMapOf<String, String>()
+        attendanceRecords.forEach { record ->
+            attendanceMap[record.userId] = record.status
+        }
+
+        val attendanceList = users.map { user ->
+            val userName = user.name ?: "Unknown"
+            val status = attendanceMap[user.userId] ?: "Absent"  // Default to "Absent" if not found
             mapOf(
-                "userId" to record.userId,
+                "userId" to user.userId.toString(),  // Convert userId to String
                 "name" to userName,
-                "status" to record.status
+                "status" to status
             )
         }
 
-        val from = arrayOf("userId", "name", "status")
-        val to = intArrayOf(R.id.tvUserId, R.id.tvUserName, R.id.tvStatus)
+        if (attendanceList.isEmpty()) {
+            noAttFoTextView.visibility = TextView.VISIBLE
+            attListView.visibility = ListView.GONE
+        } else {
+            noAttFoTextView.visibility = TextView.GONE
+            attListView.visibility = ListView.VISIBLE
 
-        val adapter = object : SimpleAdapter(
-            this, attendanceList, R.layout.list_item_attendance, from, to
-        ) {
-            override fun setViewText(view: TextView, text: String?) {
-                view.text = text
+            Log.d("LoadAttendance", "Att $attendanceList")
+
+            val from = arrayOf("userId", "name", "status")
+            val to = intArrayOf(R.id.tvUserId, R.id.tvUserName, R.id.tvStatus)
+
+            val adapter = object : SimpleAdapter(
+                this, attendanceList, R.layout.list_item_attendance, from, to
+            ) {
+                override fun setViewText(view: TextView, text: String?) {
+                    super.setViewText(view, text ?: "")
+                    view.text = text
+                }
             }
-        }
 
-        val userListView: ListView = findViewById(R.id.userListView)
-        userListView.adapter = adapter
+            Log.d("LoadAttendance", "Changing")
+            attListView.adapter = adapter
+        }
     }
 
 

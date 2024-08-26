@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Attendance_1</string>
+    <string name="app_name">Attendance Manager</string>
     <string name="capture">Capture</string>
     <string name="switch_camera">Switch Camera</string>
     <string name="toolbar_description">User List Toolbar</string>
