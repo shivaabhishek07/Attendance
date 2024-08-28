@@ -1,13 +1,13 @@
 package com.example.attendence_1
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import android.view.View
-import android.widget.ImageButton
+import android.view.Surface
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -24,8 +24,8 @@ class QRScanActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var switchCameraButton: ImageButton
-    private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private var cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+    private lateinit var tvStartingCamera: TextView
 
     private val barcodeScannerOptions = BarcodeScannerOptions.Builder()
         .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
@@ -36,15 +36,14 @@ class QRScanActivity : AppCompatActivity() {
         setContentView(R.layout.activity_qr_scan)
 
         previewView = findViewById(R.id.previewView)
-        switchCameraButton = findViewById(R.id.switchCameraButton)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        tvStartingCamera = findViewById(R.id.tvStartingCamera)
 
         startCamera()
 
-        // Set up the listener for the switch camera button
-        switchCameraButton.setOnClickListener {
-            toggleCamera()
-        }
+        Handler(Looper.getMainLooper()).postDelayed({
+            tvStartingCamera.visibility = TextView.INVISIBLE
+        }, 1500)
     }
 
     private fun startCamera() {
@@ -57,8 +56,11 @@ class QRScanActivity : AppCompatActivity() {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
 
+            val display = previewView.display
+            val rotation = display?.rotation ?: Surface.ROTATION_0
+
             val imageAnalysis = ImageAnalysis.Builder()
-                .setTargetRotation(previewView.display.rotation)
+                .setTargetRotation(rotation)
                 .build()
                 .also {
                     it.setAnalyzer(cameraExecutor, BarcodeAnalyzer())
@@ -73,15 +75,6 @@ class QRScanActivity : AppCompatActivity() {
                 Log.e("QRScanActivity", "Use case binding failed", exc)
             }
         }, ContextCompat.getMainExecutor(this))
-    }
-
-    private fun toggleCamera() {
-        cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        } else {
-            CameraSelector.DEFAULT_BACK_CAMERA
-        }
-        startCamera() // Restart the camera with the new selector
     }
 
     @OptIn(ExperimentalGetImage::class)

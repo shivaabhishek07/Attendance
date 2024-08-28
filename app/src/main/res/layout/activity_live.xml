@@ -1,0 +1,24 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/light">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tvStartingCamera"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="Starting Camera for Marking attendance"
+        android:textColor="@android:color/black"
+        android:background="@color/light"
+        android:padding="10dp"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
+
+</RelativeLayout>

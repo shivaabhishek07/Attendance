@@ -110,10 +110,37 @@
             android:textColor="@color/black"
             android:textStyle="bold" />
 
+        <Button
+            android:id="@+id/btnLive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btnViewUsers"
+            android:layout_marginTop="30dp"
+            android:background="@color/lightblue"
+            android:text="Go Live"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+
+
+
         <androidx.camera.view.PreviewView
             android:id="@+id/previewView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tvStartingCamera"
+            android:layout_width="match_parent"
+            android:layout_height="4.0in"
+            android:text="Starting Camera for Marking attendance"
+            android:textColor="@android:color/black"
+            android:background="@color/light"
+            android:padding="10dp"
+            android:gravity="center"
+            android:layout_centerInParent="true"
+            android:visibility="gone"/>
+
     </RelativeLayout>
 </ScrollView>

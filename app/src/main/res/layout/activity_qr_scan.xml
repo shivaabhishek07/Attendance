@@ -9,17 +9,28 @@
         android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/tvStartingCamera"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/light"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="Starting Camera for scanning QR"
+            android:textColor="@android:color/black"
+            android:visibility="visible" />
+    </androidx.camera.view.PreviewView>
+
+    <TextView
+        android:id="@+id/tvScanQR"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="QR"
+        android:textColor="@color/light"
+        android:padding="10dp"
+        android:gravity="start"
         android:visibility="visible"/>
 
-    <ImageButton
-        android:id="@+id/switchCameraButton"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_margin="25dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:background="?attr/selectableItemBackground"
-        android:contentDescription="@string/switch_camera"
-        android:padding="8dp"
-        android:src="@drawable/ic_switch_camera" />
 </RelativeLayout>

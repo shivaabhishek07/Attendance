@@ -1,111 +1,59 @@
 package com.example.attendence_1
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.camera.view.PreviewView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
-import java.util.concurrent.Executors
+import java.io.File
 import kotlin.math.pow
 import kotlin.math.sqrt
-import java.io.File
 
-
-import android.app.Activity
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
-
-import android.view.LayoutInflater
-
-
-
-
-import androidx.core.view.ViewCompat
-
-
-
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var etUserId: EditText
-    private lateinit var btnMarkAttendance: Button
-    private lateinit var btnRegister: Button
-    private lateinit var btnScanQR: Button
+class LiveActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var tvStartingCamera: TextView
-
-    private lateinit var btnViewUsers: Button
-    private lateinit var btnLive: Button
 
     private lateinit var userRepository: UserRepository
     private lateinit var faceNetModel: FaceNetModel
     private lateinit var attendanceRepository: AttendanceRepository
     private var imageCapture: ImageCapture? = null
     private var cameraProvider: ProcessCameraProvider? = null
+    private var userId = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_live)
 
-        etUserId = findViewById(R.id.etUserId)
-        btnMarkAttendance = findViewById(R.id.btnMarkAttendance)
-
-        btnRegister = findViewById(R.id.btnRegister)
-        btnScanQR = findViewById(R.id.btnScanQR)
         previewView = findViewById(R.id.previewView)
         tvStartingCamera = findViewById(R.id.tvStartingCamera)
-
-        btnViewUsers = findViewById(R.id.btnViewUsers)
-        btnLive = findViewById(R.id.btnLive)
-
         userRepository = UserRepository(this)
         faceNetModel = FaceNetModel(this, Models.FACENET, useGpu = true, useXNNPack = true)
         attendanceRepository = AttendanceRepository(this)
 
-        btnMarkAttendance.setOnClickListener {
-            startCameraPreview()
-        }
+        startProcess()
 
-        btnRegister.setOnClickListener {
-            val intent = Intent(this, RegisterActivity::class.java)
-            startActivity(intent)
-        }
-
-        btnScanQR.setOnClickListener {
-            val intent = Intent(this, QRScanActivity::class.java)
-            startActivityForResult(intent, REQUEST_CODE_QR_SCAN)
-        }
-
-        btnViewUsers.setOnClickListener {
-            val intent = Intent(this, UserListActivity::class.java)
-            startActivity(intent)
-        }
-
-        btnLive.setOnClickListener {
-            val intent = Intent(this, LiveActivity::class.java)
-            startActivity(intent)
-        }
-
-        // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera()
         } else {
@@ -116,30 +64,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startCameraPreview() {
-        val userIdText = etUserId.text.toString()
 
-        if (userIdText.isEmpty()) {
-            Toast.makeText(this, "Please enter the User ID", Toast.LENGTH_SHORT).show()
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "No content in the QR", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val user = userRepository.getUserById(userIdText)
+        val user = userRepository.getUserById(userId)
         if (user != null) {
-            // Hide all other UI elements
-            etUserId.visibility = View.GONE
-            btnMarkAttendance.visibility = View.GONE
-            btnRegister.visibility = View.GONE
-            btnScanQR.visibility = View.GONE
-            btnLive.visibility = View.GONE
-            btnViewUsers.visibility = View.GONE
-
             // Start CameraX preview for 5 seconds
             previewView.visibility = View.VISIBLE
             tvStartingCamera.visibility = TextView.VISIBLE
             startCamera()
             Handler(Looper.getMainLooper()).postDelayed({
                 tvStartingCamera.visibility = TextView.INVISIBLE
-            }, 1000)
+            }, 1500)
             previewView.postDelayed({
                 captureImage(user.embedding)
             }, 5000) // Delay for 5 seconds
@@ -147,6 +86,11 @@ class MainActivity : AppCompatActivity() {
             showCustomTopView("User not found")
 
         }
+    }
+
+    private fun startProcess(){
+        val intent = Intent(this, QRScanActivity::class.java)
+        startActivityForResult(intent, REQUEST_CODE_QR_SCAN)
     }
 
     private fun startCamera() {
@@ -229,6 +173,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Log.d("FaceDetection", "No face detected")
                     Toast.makeText(this, "No face detected, try again", Toast.LENGTH_SHORT).show()
+                    startProcess()
                 }
                 // Delete the image file after processing
                 if (photoFile.exists()) {
@@ -239,6 +184,7 @@ class MainActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Log.e("FaceDetection", "Face detection failed: ${e.message}")
                 Toast.makeText(this, "Face detection failed!", Toast.LENGTH_SHORT).show()
+                startCameraPreview()
                 // Ensure the image file is deleted even if processing fails
                 if (photoFile.exists()) {
                     photoFile.delete()
@@ -249,14 +195,6 @@ class MainActivity : AppCompatActivity() {
                 // Stop the camera and hide the preview
                 stopCamera()
                 previewView.visibility = View.GONE
-                // Show all other UI elements
-                etUserId.visibility = View.VISIBLE
-                btnMarkAttendance.visibility = View.VISIBLE
-                btnRegister.visibility = View.VISIBLE
-                btnScanQR.visibility = View.VISIBLE
-                btnLive.visibility = View.VISIBLE
-
-                btnViewUsers.visibility = View.VISIBLE
             }
     }
 
@@ -269,18 +207,21 @@ class MainActivity : AppCompatActivity() {
         val currentDate = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date())
         var status = ""
 
-        if (attendanceRepository.hasAttendanceMarked(etUserId.text.toString(), currentDate)) {
-            status = "Attendance has already been marked for UserID: ${etUserId.text}"
+        if (attendanceRepository.hasAttendanceMarked(userId, currentDate)) {
+            status = "Attendance has already been marked for UserID: ${userId}"
         } else {
             if (distance < THRESHOLD || cosineSim > COSINE_THRESHOLD) {
-                attendanceRepository.insertAttendance(etUserId.text.toString(), currentDate, "Present")
-                status = "Attendance marked for UserID: ${etUserId.text} at ${currentTime}"
+                attendanceRepository.insertAttendance(userId, currentDate, "Present")
+                status = "Attendance marked for UserID: ${userId} at ${currentTime}"
             } else {
-                status = "Face does not match with UserID: ${etUserId.text}"
+                status = "Face does not match with UserID: ${userId}"
             }
         }
 
         showCustomTopView(status)
+        Handler(Looper.getMainLooper()).postDelayed({
+            startProcess()
+        }, 5000)
     }
 
     private fun stopCamera() {
@@ -321,12 +262,11 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_CODE_QR_SCAN && resultCode == RESULT_OK) {
             val qrCodeResult = data?.getStringExtra(QRScanActivity.EXTRA_QR_CODE)
             qrCodeResult?.let {
-                etUserId.setText(it)
+                userId = it
                 startCameraPreview()
             }
         }
     }
-
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
@@ -335,6 +275,7 @@ class MainActivity : AppCompatActivity() {
         private const val COSINE_THRESHOLD = 0.7f
         private const val REQUEST_CODE_QR_SCAN = 101
     }
+
     private fun showCustomTopView(message: String) {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val customView = inflater.inflate(R.layout.custom_snackbar, null)
@@ -346,8 +287,7 @@ class MainActivity : AppCompatActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         ).apply {
-            gravity = Gravity.TOP
-            topMargin = 100 // Adjust the margin as needed
+            gravity = Gravity.CENTER
         }
 
         rootLayout.addView(customView, params)
